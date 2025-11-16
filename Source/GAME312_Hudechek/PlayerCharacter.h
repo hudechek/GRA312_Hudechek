@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "Resource_M.h"
 #include "Kismet/GameplayStatics.h"
+#include "BuildingPart.h"
 #include "PlayerCharacter.generated.h"
 
 
@@ -81,15 +82,32 @@ public:
 		int Berries;
 
 	//Array used to hold all the Resource amounts 
-	UPROPERTY(EditAnywhere, Category = "Player Inventory")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Player Inventory")
 		TArray<int> ResourceArray;
 
 	//Array to hold all the names of Resources
 	UPROPERTY(EditAnywhere, Category = "Player Inventory")
 		TArray<FString> ResourceNameArray;
 
+	//set up HitDecal Class
 	UPROPERTY(EditAnywhere, Category = "Hit Marker")
 		UMaterialInterface* HitDecal;
+
+	//stores information about how many resources we have
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Building Supplies")
+		TArray<int> BuildingArray;
+
+	//bool for if we are building or not
+	UPROPERTY()
+		bool isBuilding;
+
+	//used to select children classes of type ABuildingPart
+	UPROPERTY(BlueprintReadWrite)
+		TSubclassOf<ABuildingPart> BuildingPartClass;
+
+	//sets variable to our spawned blueprint
+	UPROPERTY(BlueprintReadWrite)
+		ABuildingPart* spawnedBuildingPart;
 	
 	//function to set Health variable to new amount
 	UFUNCTION(BlueprintCallable)
@@ -111,4 +129,17 @@ public:
 	//parameters for amount and resource name
 	UFUNCTION()
 		void GiveResource(float amount, FString resourceType);
+
+	//function to update number of resources we hold in our inventory
+	UFUNCTION(BLueprintCallable)
+		void UpdateResources(float WoodAmount, float StoneAmount, FString buildingObject);
+
+	//function to spawn building part of passed in ID
+	UFUNCTION(BlueprintCallable)
+		void SpawnBuilding(int BuildingID, bool& isSuccess);
+
+	//Used to rotate building Part
+	UFUNCTION(BlueprintCallable)
+		void rotateBuilding();
+	
 };

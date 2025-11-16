@@ -20,6 +20,9 @@ APlayerCharacter::APlayerCharacter()
 	//sets up link to pawn controls for 
 	PlayerCamera->bUsePawnControlRotation = true;
 
+	//set up buildingArray to 3 for each resource
+	BuildingArray.SetNum(3);
+	
 	//set up of rudimentary inventory system;
 	ResourceArray.SetNum(3);
 	ResourceNameArray.Add(TEXT("Wood"));
@@ -46,6 +49,23 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//determine if we are building
+	if (isBuilding)
+	{
+		//determine if spawned part is a vaild object
+		if (spawnedBuildingPart)
+		{
+			//Start Location of trace
+			FVector Startlocation = PlayerCamera->GetComponentLocation();
+			//Cameras direction in world
+			FVector Direction = PlayerCamera->GetForwardVector() * 800.0f;
+			//EndLocation of trace for placing object 
+			FVector EndLocation = Startlocation + Direction;
+			//spawns spawnedBuildingPart at the EndLocation of trace 
+			spawnedBuildingPart->SetActorLocation(EndLocation);
+		}
+		
+	}
 }
 
 // Called to bind functionality to input
@@ -63,6 +83,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::StartJump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &APlayerCharacter::StopJump);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &APlayerCharacter::FindObject);
+	PlayerInputComponent->BindAction("RotatePart", IE_Pressed, this, &APlayerCharacter::rotateBuilding);
 
 }
 
@@ -115,57 +136,67 @@ void APlayerCharacter::FindObject()
 	//Enable returning normal of object for when needed
 	QueryParams.bReturnFaceIndex = true;
 
-	//preform lintrace and do logic if trace comes back with a success
-	if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation,ECC_Visibility, QueryParams))
+	//Check if we are in building mode or not to determine if we should be able to gather resources
+	if (!isBuilding)
 	{
-		//cast to Resorce_M and get a refrence to the actor and store it as HitResult
-		AResource_M* HitResource = Cast<AResource_M>(HitResult.GetActor());
-		if (Stamina > 5.0f)
+		//preform lintrace and do logic if trace comes back with a success
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation,ECC_Visibility, QueryParams))
 		{
-			if (HitResource)
+			//cast to Resorce_M and get a refrence to the actor and store it as HitResult
+			AResource_M* HitResource = Cast<AResource_M>(HitResult.GetActor());
+			if (Stamina > 5.0f)
 			{
-				//store hit resources name in local variable of hitName
-				FString hitName = HitResource->ResourceName;
-				//store hit resources resource amount in ResourceValue
-				int ResourceValue = HitResource->ResourceAmount;
-
-				//reduce the Total available Resource by the amount taken based on ResourceAmount
-				HitResource->TotalResource = HitResource->TotalResource - ResourceValue;
-
-				//if if the hit resources total value is greater than the Current amount being taken
-				if (HitResource->TotalResource > ResourceValue)
+				if (HitResource)
 				{
-					//call GiveResource and passing in the local variable of ResourceValue for amount to give player and htiName to determine which index to allocate the amount to
-					GiveResource(ResourceValue, hitName);
-				
-					//check to make sure GEngine is not null
-					check (GEngine != nullptr)
-				
-					//Display Resource Collected Message
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Resource Collected"));
+					//store hit resources name in local variable of hitName
+					FString hitName = HitResource->ResourceName;
+					//store hit resources resource amount in ResourceValue
+					int ResourceValue = HitResource->ResourceAmount;
 
-					UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal, FVector(10.0f, 10.0f,10.0f), HitResult.Location, FRotator(-90.0f, 0.0f, 0.0f), 2.0f);
+					//reduce the Total available Resource by the amount taken based on ResourceAmount
+					HitResource->TotalResource = HitResource->TotalResource - ResourceValue;
+
+					//if if the hit resources total value is greater than the Current amount being taken
+					if (HitResource->TotalResource > ResourceValue)
+					{
+						//call GiveResource and passing in the local variable of ResourceValue for amount to give player and htiName to determine which index to allocate the amount to
+						GiveResource(ResourceValue, hitName);
+				
+						//check to make sure GEngine is not null
+						check (GEngine != nullptr)
+				
+						//Display Resource Collected Message
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Resource Collected"));
+
+						UGameplayStatics::SpawnDecalAtLocation(GetWorld(), HitDecal, FVector(10.0f, 10.0f,10.0f), HitResult.Location, FRotator(-90.0f, 0.0f, 0.0f), 2.0f);
 					
-					//subtract 5 from stamina when gathering is sucessful
-					SetStamina(-5.0f);
-				}
-				//if the hit resource is anything other than greater than destroy the resource
-				else
-				{
-					//destroy hit resorce
-					HitResource->Destroy();
+						//subtract 5 from stamina when gathering is sucessful
+						SetStamina(-5.0f);
+					}
+					//if the hit resource is anything other than greater than destroy the resource
+					else
+					{
+						//destroy hit resorce
+						HitResource->Destroy();
 				
-					//check to make sure GEngine is not null
-					check (GEngine != nullptr)
+						//check to make sure GEngine is not null
+						check (GEngine != nullptr)
 				
-					//Display Resource Depleted Message
-					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Resource Depleted"));
-				}
+						//Display Resource Depleted Message
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, TEXT("Resource Depleted"));
+					}
 
 				
-			}
+				}
 		
+			}
 		}
+		
+	}
+	else
+	{
+		isBuilding = false;
+		
 	}
 }
 
@@ -238,6 +269,63 @@ void APlayerCharacter::GiveResource(float amount, FString resourceType)
 	if (resourceType == "Berries")
 	{
 		ResourceArray[2] = ResourceArray[2] + amount;
+	}
+}
+
+//function definition to update the number of resources in the resourceArray and update the array of building parts we have
+void APlayerCharacter::UpdateResources(float WoodAmount, float StoneAmount, FString buildingObject)
+{
+	ResourceArray[0] = ResourceArray[0] - WoodAmount;
+	ResourceArray[1] = ResourceArray[1] - StoneAmount;
+
+	if (buildingObject == "Wall")
+	{
+		BuildingArray[0] = BuildingArray[0] + 1;
+	}
+	if (buildingObject == "Floor")
+	{
+		BuildingArray[1] = BuildingArray[1] + 1;
+	}
+	if (buildingObject == "Ceiling")
+	{
+		BuildingArray[2] = ResourceArray[2] + 1;
+	}
+}
+
+//take the building id based on array index from building array and spawn actor into world based on trace location
+void APlayerCharacter::SpawnBuilding(int BuildingID, bool& isSuccess)
+{
+	if (!isBuilding)
+	{
+		if (BuildingArray[BuildingID] >= 1)
+		{
+			isBuilding = true;
+			FActorSpawnParameters SpawnParams;
+			FVector StartLocation = PlayerCamera->GetComponentLocation();
+			FVector Direction = PlayerCamera->GetForwardVector() * 800.0f;
+			FVector EndLocation = StartLocation + Direction;
+			FRotator MyRot(0,0,0);
+
+			BuildingArray[BuildingID] = BuildingArray[BuildingID] - 1;
+
+			spawnedBuildingPart = GetWorld()->SpawnActor<ABuildingPart>(BuildingPartClass, EndLocation, MyRot, SpawnParams);
+
+			isSuccess = true;
+		}
+		else
+		{
+			isBuilding = false;
+		}
+		
+	}
+}
+
+//rotate building 90 degrees in the yaw based on pivot pointset in buildingPartBlueprint
+void APlayerCharacter::rotateBuilding()
+{
+	if (isBuilding)
+	{
+		spawnedBuildingPart->AddActorWorldRotation(FRotator(0,90,0));
 	}
 }
 
