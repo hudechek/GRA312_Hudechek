@@ -8,6 +8,7 @@
 #include "Resource_M.h"
 #include "Kismet/GameplayStatics.h"
 #include "BuildingPart.h"
+#include "PlayerHUD.h"
 #include "PlayerCharacter.generated.h"
 
 
@@ -108,6 +109,10 @@ public:
 	//sets variable to our spawned blueprint
 	UPROPERTY(BlueprintReadWrite)
 		ABuildingPart* spawnedBuildingPart;
+
+	//set class of UPlayerHUD as HUD
+	UPROPERTY(BlueprintReadWrite)
+		UPlayerHUD* HUD;
 	
 	//function to set Health variable to new amount
 	UFUNCTION(BlueprintCallable)

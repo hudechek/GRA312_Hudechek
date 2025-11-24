@@ -49,6 +49,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//call UpdateHudBars function every from class HUD pass in Health Hunger and Stamina Variables
+	HUD->UpdateHudBars(Health, Hunger, Stamina);
+
 	//determine if we are building
 	if (isBuilding)
 	{
@@ -288,7 +291,7 @@ void APlayerCharacter::UpdateResources(float WoodAmount, float StoneAmount, FStr
 	}
 	if (buildingObject == "Ceiling")
 	{
-		BuildingArray[2] = ResourceArray[2] + 1;
+		BuildingArray[2] = BuildingArray[2] + 1;
 	}
 }
 

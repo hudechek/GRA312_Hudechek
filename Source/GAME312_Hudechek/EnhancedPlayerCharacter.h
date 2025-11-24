@@ -26,7 +26,16 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	class UInputAction* Movement;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	class UInputAction* JumpAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	class UInputAction* LookAction;
+
 
 public:	
 	// Called every frame
@@ -35,18 +44,19 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<class UInputMappingContext> GRA312MappingContext;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<class UInputAction> Movement;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<class UInputAction> JumpAction;
-
+	UPROPERTY(EditAnywhere, Category = "Input")
+	class UInputMappingContext* MappingContext;
+	
+	UFUNCTION()
 	void Move(const FInputActionValue& Value);
-	void Jump(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void HandleJump(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void HandleLook(const FInputActionValue& Value);
 
 	UPROPERTY(EditAnywhere)
 	UCameraComponent* PlayerCamera;
+	
 };
