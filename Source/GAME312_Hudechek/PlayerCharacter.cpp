@@ -41,7 +41,13 @@ void APlayerCharacter::BeginPlay()
 	FTimerHandle StatsTimerHandle;
 	//Set timer using StatsTimerHandle to call DecreaseStats ever 2 Seconds on a loop
 	GetWorld()->GetTimerManager().SetTimer(StatsTimerHandle, this, &APlayerCharacter::DecreaseStats, 2, true);
-	
+
+	// if ObjectiveWidget is valid the set objectsBuilt and matsCollected to 0
+	if (ObjectiveWidget)
+	{
+		ObjectiveWidget->UpdatebuildOBJ(0.0f);
+		ObjectiveWidget->UpdatematOGJ(0.0f);
+	}
 }
 
 // Called every frame
@@ -164,7 +170,13 @@ void APlayerCharacter::FindObject()
 					{
 						//call GiveResource and passing in the local variable of ResourceValue for amount to give player and htiName to determine which index to allocate the amount to
 						GiveResource(ResourceValue, hitName);
-				
+
+						//add the amount of resources collected to the total in matsCollected
+						matsCollected = matsCollected + ResourceValue;
+
+						//updates the mats portion of the ObjectiveWidget
+						ObjectiveWidget->UpdatematOBJ(matsCollected);
+						
 						//check to make sure GEngine is not null
 						check (GEngine != nullptr)
 				
@@ -199,6 +211,11 @@ void APlayerCharacter::FindObject()
 	else
 	{
 		isBuilding = false;
+		// add one to the number of objectsBuilt
+		objectsBuilt = objectsBuilt + 1.0f;
+
+		//updates to ObjectiveWidget to reflect the number of objects built
+		ObjectiveWidget->UpdatebuildOBJ(objectsBuilt);
 		
 	}
 }
@@ -313,6 +330,8 @@ void APlayerCharacter::SpawnBuilding(int BuildingID, bool& isSuccess)
 
 			spawnedBuildingPart = GetWorld()->SpawnActor<ABuildingPart>(BuildingPartClass, EndLocation, MyRot, SpawnParams);
 
+			
+			
 			isSuccess = true;
 		}
 		else

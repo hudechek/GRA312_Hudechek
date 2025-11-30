@@ -9,6 +9,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "BuildingPart.h"
 #include "PlayerHUD.h"
+#include "ObjectiveWidget.h"
 #include "PlayerCharacter.generated.h"
 
 
@@ -113,6 +114,18 @@ public:
 	//set class of UPlayerHUD as HUD
 	UPROPERTY(BlueprintReadWrite)
 		UPlayerHUD* HUD;
+
+	// creat class of ObjectiveWidget from UObjectiveWidget
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		UObjectiveWidget* ObjectiveWidget;
+
+	// create variable of type float to track how many objects we have built
+	UPROPERTY()
+		float objectsBuilt;
+
+	// create variable of type float to track how many materials we have collected
+	UPROPERTY()
+		float matsCollected;
 	
 	//function to set Health variable to new amount
 	UFUNCTION(BlueprintCallable)
