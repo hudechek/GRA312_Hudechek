@@ -46,7 +46,7 @@ void APlayerCharacter::BeginPlay()
 	if (ObjectiveWidget)
 	{
 		ObjectiveWidget->UpdatebuildOBJ(0.0f);
-		ObjectiveWidget->UpdatematOGJ(0.0f);
+		ObjectiveWidget->UpdatematOBJ(0.0f);
 	}
 }
 
